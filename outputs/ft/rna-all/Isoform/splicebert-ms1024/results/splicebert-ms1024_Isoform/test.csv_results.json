@@ -1,0 +1,9 @@
+{
+    "eval_loss": 0.011762531474232674,
+    "eval_r^2": 0.7278174459934235,
+    "eval_pearson_r_squared": 0.7365594400926376,
+    "eval_runtime": 10.605,
+    "eval_samples_per_second": 4691.657,
+    "eval_steps_per_second": 146.629,
+    "epoch": 4.84
+}

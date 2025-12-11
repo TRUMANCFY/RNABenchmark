@@ -1,0 +1,15 @@
+{
+    "eval_loss": 0.03795451298356056,
+    "eval_r^2_mean": 0.5677942638065581,
+    "eval_r^2_ON": 0.7320731862137109,
+    "eval_r^2_OFF": 0.5024239127351962,
+    "eval_r^2_ON_OFF": 0.46888569247076717,
+    "eval_MAE_mean": 0.1467667097846667,
+    "eval_MAE_ON": 0.11312814801931381,
+    "eval_MAE_OFF": 0.16379393637180328,
+    "eval_MAE_ON_OFF": 0.163378044962883,
+    "eval_runtime": 4.1604,
+    "eval_samples_per_second": 2200.247,
+    "eval_steps_per_second": 68.983,
+    "epoch": 9.61
+}

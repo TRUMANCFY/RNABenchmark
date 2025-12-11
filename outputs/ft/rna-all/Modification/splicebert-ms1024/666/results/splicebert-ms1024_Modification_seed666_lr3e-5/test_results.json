@@ -1,0 +1,21 @@
+{
+    "eval_loss": 0.10506948828697205,
+    "eval_hAm_auc": 0.8989304304122925,
+    "eval_hCm_auc": 0.9767652153968811,
+    "eval_hGm_auc": 0.9881564974784851,
+    "eval_hUm_auc": 0.9550086855888367,
+    "eval_hm1A_auc": 0.9145652055740356,
+    "eval_hm5C_auc": 0.9716348052024841,
+    "eval_hm5U_auc": 0.9465652108192444,
+    "eval_hm6A_auc": 0.9898608922958374,
+    "eval_hm6Am_auc": 0.9786695837974548,
+    "eval_hm7G_auc": 0.9645739197731018,
+    "eval_hPsi_auc": 0.9472348093986511,
+    "eval_Atol_auc": 0.9061217308044434,
+    "eval_mean_auc": 0.9531739155451456,
+    "eval_mean_mcc": 0.22248149508144754,
+    "eval_runtime": 0.9238,
+    "eval_samples_per_second": 1298.981,
+    "eval_steps_per_second": 41.134,
+    "epoch": 4.45
+}
