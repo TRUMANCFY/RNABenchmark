@@ -1115,6 +1115,11 @@ class RnaFmForNucleotideLevel(RnaFmPreTrainedModel):
         self.config = config
     
         self.rnafm = RnaFmModel(config)
+
+        if not hasattr(self.config, "token_type"):
+            # choose the default you actually want:
+            # "single", "6mer", or "bpe"
+            self.config.token_type = "single"
        
         self.tokenizer = tokenizer
         if self.config.token_type == 'bpe' or  self.config.token_type=='non-overlap':
@@ -1343,6 +1348,12 @@ class RnaFmForStructuralimputation(RnaFmPreTrainedModel):
         self.rnafm = RnaFmModel(config)
        
         self.tokenizer = tokenizer
+
+        if not hasattr(self.config, "token_type"):
+            # choose the default you actually want:
+            # "single", "6mer", or "bpe"
+            self.config.token_type = "single"
+        
         if self.config.token_type == 'bpe' or  self.config.token_type=='non-overlap':
             self.down_mlp_a = nn.Linear(config.hidden_size, config.hidden_size)
             self.down_mlp_t = nn.Linear(config.hidden_size, config.hidden_size)

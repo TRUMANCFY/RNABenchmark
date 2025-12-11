@@ -390,7 +390,7 @@ def train():
             num_labels=train_dataset.num_labels,
             trust_remote_code=True,
             problem_type="single_label_classification",
-            token_type=training_args.token_type,
+            # token_type=training_args.token_type,
             tokenizer=tokenizer,
         )     
     elif training_args.model_type == 'rnabert':      

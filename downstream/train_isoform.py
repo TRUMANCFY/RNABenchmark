@@ -420,7 +420,8 @@ def train():
     # get the evaluation results from trainer
     if training_args.eval_and_save_results:
         for data_test in data_test_list:
-            data_test_name = data_test +".csv"
+            data_test_name = data_test
+            # data_test_name = data_test +".csv"
             print(f"evaluating data_test_name = {data_test_name}")
             test_dataset = SupervisedDataset(tokenizer=tokenizer, args=training_args,
                                             data_path=os.path.join(data_args.data_path, data_test_name), 

@@ -181,7 +181,9 @@ def main(args):
     kwargs_handlers = [DistributedDataParallelKwargs(find_unused_parameters=True)]
     accelerator = Accelerator(kwargs_handlers=kwargs_handlers,
                               gradient_accumulation_steps=args.gradient_accumulation_steps,
-                              log_with='wandb')
+                              log_with='wandb',                            
+                              mixed_precision="fp16",   # 🔹 add this line
+)
     model_name = args.output_dir.split('/')[-1]
 
     name = f'[RNA_Secondary_Structure_Prediction]{model_name}_' \
