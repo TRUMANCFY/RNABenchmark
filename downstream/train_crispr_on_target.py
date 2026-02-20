@@ -286,6 +286,9 @@ def train():
     test_dataset = SupervisedDataset(tokenizer=tokenizer, args=training_args,
                                      data_path=os.path.join(data_args.data_path, data_args.data_test_path), 
                                      kmer=data_args.kmer)
+
+    num_labels = train_dataset.num_labels
+
     # Subsample training set and scale epochs to maintain total training steps
     if training_args.train_fraction < 1.0:
         original_len = len(train_dataset)
@@ -306,7 +309,8 @@ def train():
         if training_args.train_from_scratch:
             print('Train from scratch')
             config = RnaLmConfig.from_pretrained(model_args.model_name_or_path,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 problem_type="regression",
                 token_type=training_args.token_type,
                 attn_implementation=training_args.attn_implementation,
@@ -320,7 +324,8 @@ def train():
             model =  RnaLmForSequenceClassification.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 trust_remote_code=True,
                 problem_type="regression",
                 token_type=training_args.token_type,
@@ -332,7 +337,8 @@ def train():
         model = RnaFmForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
         )        
@@ -342,7 +348,8 @@ def train():
         model = RnaBertForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
         )        
@@ -352,7 +359,8 @@ def train():
         model = RnaMsmForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
         )        
@@ -362,7 +370,8 @@ def train():
         model = SpliceBertForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
         )       
@@ -372,7 +381,8 @@ def train():
         model = UtrBertForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
         )  
@@ -382,7 +392,8 @@ def train():
         model = UtrLmForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
         )           

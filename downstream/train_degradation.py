@@ -370,6 +370,8 @@ def train():
     private_test_dataset = SupervisedDataset(os.path.join(data_args.data_path, data_args.data_test_path), tokenizer, signal_noise_cutoff=-99.0, test_set='private', kmer=data_args.kmer, args=training_args)
     #print(len(public_test_dataset))
     # Subsample training set and scale epochs to maintain total training steps
+    
+    num_labels = train_dataset.num_labels
     if training_args.train_fraction < 1.0:
         original_len = len(train_dataset)
         num_samples = max(1, int(original_len * training_args.train_fraction))
@@ -380,6 +382,7 @@ def train():
         original_epochs = training_args.num_train_epochs
         training_args.num_train_epochs = int(round(original_epochs / training_args.train_fraction))
         print(f'Scaled epochs: {original_epochs} -> {training_args.num_train_epochs} to maintain training steps')
+    
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     test_data_collator = TestDataCollatorForSupervisedDataset(tokenizer=tokenizer)
     print(f'# train: {len(train_dataset)},val:{len(val_dataset)},test:{len(public_test_dataset)}+{len(private_test_dataset)}')
@@ -389,7 +392,8 @@ def train():
             
             print('Train from scratch')
             config = RnaLmConfig.from_pretrained(model_args.model_name_or_path,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 problem_type="regression",
                 token_type=training_args.token_type,
                 attn_implementation=training_args.attn_implementation,
@@ -406,7 +410,8 @@ def train():
             model =  RnaLmForNucleotideLevel.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 trust_remote_code=True,
                 problem_type="regression",
                 token_type=training_args.token_type,
@@ -419,7 +424,8 @@ def train():
         model = RnaFmForNucleotideLevel.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             # token_type=training_args.token_type,
@@ -431,7 +437,8 @@ def train():
         model = RnaBertForNucleotideLevel.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             token_type=training_args.token_type,
@@ -443,7 +450,8 @@ def train():
         model = RnaMsmForNucleotideLevel.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             token_type=training_args.token_type,
@@ -455,7 +463,8 @@ def train():
         model = SpliceBertForNucleotideLevel.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             token_type=training_args.token_type,
@@ -467,7 +476,8 @@ def train():
         model = UtrBertForNucleotideLevel.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             token_type=training_args.token_type,
@@ -479,7 +489,8 @@ def train():
         model = UtrLmForNucleotideLevel.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             token_type=training_args.token_type,

@@ -323,7 +323,7 @@ def train():
                                      kmer=data_args.kmer)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer,args=training_args)
     print(f'# train: {len(train_dataset)},val:{len(val_dataset)},test:{len(test_dataset)}')
-    
+    num_labels = train_dataset.num_labels  # capture before potential Subset wrapping
     # Subsample training set and scale epochs to maintain total training steps
     if training_args.train_fraction < 1.0:
         original_len = len(train_dataset)
@@ -341,7 +341,8 @@ def train():
         if training_args.train_from_scratch:
             print('Train from scratch')
             config = RnaLmConfig.from_pretrained(model_args.model_name_or_path,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 problem_type="regression",
                 token_type=training_args.token_type,
                 attn_implementation=training_args.attn_implementation,
@@ -353,11 +354,12 @@ def train():
                 )
         else:
             print(f'Loading {training_args.model_type} model')
-            print(train_dataset.num_labels)
+            # print(train_dataset.num_labels)
             model =  RnaLmForStructuralimputation.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 trust_remote_code=True,
                 problem_type="regression",
                 token_type=training_args.token_type,
@@ -370,7 +372,8 @@ def train():
         model = RnaFmForStructuralimputation.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             # token_type=training_args.token_type,
@@ -382,7 +385,8 @@ def train():
         model = RnaBertForStructuralimputation.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             trust_remote_code=True,
             problem_type="regression",
             token_type=training_args.token_type,
@@ -394,7 +398,8 @@ def train():
         model = RnaMsmForStructuralimputation.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
             token_type=training_args.token_type,
@@ -406,7 +411,8 @@ def train():
         model = SpliceBertForStructuralimputation.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
             token_type=training_args.token_type,
@@ -418,7 +424,8 @@ def train():
         model = UtrBertForStructuralimputation.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
             token_type=training_args.token_type,
@@ -430,7 +437,8 @@ def train():
         model = UtrLmForStructuralimputation.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="regression",
             trust_remote_code=True,
             token_type=training_args.token_type,
