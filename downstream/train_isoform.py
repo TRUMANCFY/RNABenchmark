@@ -53,7 +53,6 @@ class DataArguments:
     data_val_path: str = field(default=None, metadata={"help": "Path to the training data."})
     data_test_path: str = field(default=None, metadata={"help": "Path to the test data. is list"})
 
-
 @dataclass
 class TrainingArguments(transformers.TrainingArguments):
     cache_dir: Optional[str] = field(default=None)
@@ -81,6 +80,8 @@ class TrainingArguments(transformers.TrainingArguments):
     eval_and_save_results: bool = field(default=True)
     save_model: bool = field(default=True)
     seed: int = field(default=42)
+    seed: int = field(default=42)
+    train_fraction: float = field(default=1.0, metadata={"help": "Fraction of training data to use (0.0-1.0)"})
     report_to: str = field(default="tensorboard")
     metric_for_best_model : str = field(default="pearson_r_squared")
     stage: str = field(default='0')
@@ -310,6 +311,18 @@ def train():
     # holdout_WHAMMP2 = SupervisedDataset(tokenizer=tokenizer,
     #                                 data_path=os.path.join(data_path, "holdout_WHAMMP2.csv"))
     #data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer,args=training_args)
+    # Subsample training set and scale epochs to maintain total training steps
+    if training_args.train_fraction < 1.0:
+        original_len = len(train_dataset)
+        num_samples = max(1, int(original_len * training_args.train_fraction))
+        indices = sorted(random.sample(range(original_len), num_samples))
+        train_dataset = torch.utils.data.Subset(train_dataset, indices)
+        print(f'Subsampled training set: {num_samples}/{original_len} ({training_args.train_fraction*100:.1f}%)')
+
+        original_epochs = training_args.num_train_epochs
+        training_args.num_train_epochs = int(round(original_epochs / training_args.train_fraction))
+        print(f'Scaled epochs: {original_epochs} -> {training_args.num_train_epochs} to maintain training steps')
+    
     print(f'# train: {len(train_dataset)},val:{len(val_dataset)}')#,test:{len(test_dataset)}')
 
     # load model

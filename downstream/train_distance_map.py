@@ -162,7 +162,18 @@ def main(args):
         print(f"evaluating data_test_name = {data_test_name}")
         test_dataset = DistanceMapDataset(data_path=os.path.join(args.data_path, data_test_name), tokenizer=tokenizer, args=args)
         test_dataset_list.append(test_dataset)
+    
+    # Subsample training set and scale epochs to maintain total training steps
+    if args.train_fraction < 1.0:
+        original_len = len(train_dataset)
+        num_samples = max(1, int(original_len * args.train_fraction))
+        indices = sorted(random.sample(range(original_len), num_samples))
+        train_dataset = torch.utils.data.Subset(train_dataset, indices)
+        print(f'Subsampled training set: {num_samples}/{original_len} ({args.train_fraction*100:.1f}%)')
 
+        original_epochs = args.num_epochs
+        args.num_epochs = int(round(original_epochs / args.train_fraction))
+        print(f'Scaled epochs: {original_epochs} -> {args.num_epochs} to maintain training steps')
     
     print(f'# train: {len(train_dataset)},val:{len(val_dataset)},test:{len(test_dataset_list[0])}+{len(test_dataset_list[1])}+{len(test_dataset_list[2])}')
     collate_fn = collator(tokenizer,args)
@@ -193,7 +204,7 @@ def main(args):
     if accelerator.is_main_process:
         wandb.init(project='DistancetMap', mode='offline')
         wandb.run.name = name
-        wandb.run.save()
+        # wandb.run.save()
         wandb.watch(model)
         print(name)
     
@@ -307,6 +318,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_val_path', default= '')
     parser.add_argument('--data_test_path', default= '')
     parser.add_argument('--attn_implementation', type=str, default="eager")
+    parser.add_argument('--train_fraction', type=float, default=1.0, help='Fraction of training data to use (0.0-1.0)')
     args = parser.parse_args()
 
     assert args.mode in ['bprna', 'pdb']

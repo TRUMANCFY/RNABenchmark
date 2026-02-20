@@ -83,6 +83,7 @@ class TrainingArguments(transformers.TrainingArguments):
     eval_and_save_results: bool = field(default=True)
     save_model: bool = field(default=False)
     seed: int = field(default=42)
+    train_fraction: float = field(default=1.0, metadata={"help": "Fraction of training data to use (0.0-1.0)"})
     fp16: bool = field(default=False)
     metric_for_best_model: str = field(default="accuracy")
     stage: str = field(default='0')
@@ -285,13 +286,27 @@ def train():
                                      kmer=data_args.kmer)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer,args=training_args)
     print(f'# train: {len(train_dataset)},val:{len(val_dataset)},test:{len(test_dataset)}')
+    num_labels = train_dataset.num_labels  # capture before potential Subset wrapping
+
+    # Subsample training set and scale epochs to maintain total training steps
+    if training_args.train_fraction < 1.0:
+        original_len = len(train_dataset)
+        num_samples = max(1, int(original_len * training_args.train_fraction))
+        indices = sorted(random.sample(range(original_len), num_samples))
+        train_dataset = torch.utils.data.Subset(train_dataset, indices)
+        print(f'Subsampled training set: {num_samples}/{original_len} ({training_args.train_fraction*100:.1f}%)')
+
+        original_epochs = training_args.num_train_epochs
+        training_args.num_train_epochs = int(round(original_epochs / training_args.train_fraction))
+        print(f'Scaled epochs: {original_epochs} -> {training_args.num_train_epochs} to maintain training steps')
 
     # load model
     if training_args.model_type == 'rnalm':
         if training_args.train_from_scratch:
             print('Train from scratch')
             config = RnaLmConfig.from_pretrained(model_args.model_name_or_path,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 token_type=training_args.token_type,
                 problem_type="single_label_classification",
                 attn_implementation=training_args.attn_implementation,
@@ -302,11 +317,13 @@ def train():
                 )
         else:
             print('Loading rnalm model')
-            print(train_dataset.num_labels)
+            # print(train_dataset.num_labels)
+            print(num_labels)
             model =  RnaLmForSequenceClassification.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
-                num_labels=train_dataset.num_labels,
+                # num_labels=train_dataset.num_labels,
+                num_labels=num_labels,
                 trust_remote_code=True,
                 token_type=training_args.token_type,
                 attn_implementation=training_args.attn_implementation,
@@ -317,7 +334,8 @@ def train():
         model = RnaFmForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="single_label_classification",
             trust_remote_code=True,
         )        
@@ -327,7 +345,8 @@ def train():
         model = RnaBertForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="single_label_classification",
             trust_remote_code=True,
         )        
@@ -337,7 +356,8 @@ def train():
         model = RnaMsmForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="single_label_classification",
             trust_remote_code=True,
         )        
@@ -347,7 +367,8 @@ def train():
         model = SpliceBertForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="single_label_classification",
             trust_remote_code=True,
         )       
@@ -357,7 +378,8 @@ def train():
         model = UtrBertForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="single_label_classification",
             trust_remote_code=True,
         )  
@@ -367,7 +389,8 @@ def train():
         model = UtrLmForSequenceClassification.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
-            num_labels=train_dataset.num_labels,
+            # num_labels=train_dataset.num_labels,
+            num_labels=num_labels,
             problem_type="single_label_classification",
             trust_remote_code=True,
         )     

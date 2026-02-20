@@ -161,9 +161,19 @@ def main(args):
     val_dataset = SSDataset(data_path=args.data_path, tokenizer=tokenizer, args=args, mode='val')
     test_dataset = SSDataset(data_path=args.data_path, tokenizer=tokenizer, args=args, mode='test')
    
-
-    
     print(f'# train: {len(train_dataset)},val:{len(val_dataset)},test:{len(test_dataset)}')
+    
+    # Subsample training set and scale epochs to maintain total training steps
+    if args.train_fraction < 1.0:
+        original_len = len(train_dataset)
+        num_samples = max(1, int(original_len * args.train_fraction))
+        indices = sorted(random.sample(range(original_len), num_samples))
+        train_dataset = torch.utils.data.Subset(train_dataset, indices)
+        print(f'Subsampled training set: {num_samples}/{original_len} ({args.train_fraction*100:.1f}%)')
+
+        original_epochs = args.num_epochs
+        args.num_epochs = int(round(original_epochs / args.train_fraction))
+        print(f'Scaled epochs: {original_epochs} -> {args.num_epochs} to maintain training steps')
     collate_fn = collator(tokenizer,args)
     train_loader = DataLoader(train_dataset, batch_size=args.per_device_train_batch_size, shuffle=True, num_workers=args.num_workers,
                               collate_fn=collate_fn)
@@ -191,7 +201,7 @@ def main(args):
     if accelerator.is_main_process:
         wandb.init(project='SecondaryStructure', mode='offline')
         wandb.run.name = name
-        wandb.run.save()
+        # wandb.run.save()
         wandb.watch(model)
         print(name)
 
@@ -302,6 +312,7 @@ if __name__ == "__main__":
     parser.add_argument('--data_val_path', default= '')
     parser.add_argument('--data_test_path', default= '')
     parser.add_argument('--attn_implementation', type=str, default="eager")
+    parser.add_argument('--train_fraction', type=float, default=1.0, help='Fraction of training data to use (0.0-1.0)')
     args = parser.parse_args()
 
     assert args.mode in ['bprna', 'pdb']
