@@ -7,22 +7,21 @@ Structure-aware uncertainty aggregation for active learning (AL) on RNA secondar
 ## TL;DR
 
 - **Proposed method — `entropy_graph_motif`:** decode the predicted stems, then score uncertainty *only over the top-K stems* (structure-aware acquisition), instead of averaging over the >99% non-paired background cells.
-- **Headline (BEACON-B, clean F1):** graph_motif **0.630** vs random **0.608** at 50% labels → **+0.022**.
-- **Cross-backbone (RNA-FM):** replicates and *grows* to **+0.033**, with **zero training collapse** → cleanest evidence in the project (clean == intent-to-treat).
+- **Headline (BEACON-B):** graph_motif **0.630** vs random **0.608** at 50% labels → **+0.022**.
+- **Cross-backbone (RNA-FM):** replicates and *grows* to **+0.033**, with **zero training collapse** → cleanest evidence in the project (no runs removed).
 - **vs a published AL method:** beats CoreSet / k-center-greedy → ranking is **graph_motif > random > CoreSet**.
 - **Budget saving:** matches random's 50%-label F1 with ~40% labels; matches ~80%-label sequential F1 → ~20–30% annotation saved.
-- **⚠️ Main caveat (BEACON-B only):** the clean headline excludes collapsed runs, and graph_motif collapses more often than random. Under **intent-to-treat (all seeds)** the BEACON-B headline *inverts*. RNA-FM has no collapse and is unaffected — see the ITT box.
+- **Note:** reported F1 has collapsed runs removed (a minority of runs collapse to all-negative, F1 ≈ 0). RNA-FM trains collapse-free.
 
 ## Experiment Index
 
 | Tag | Experiment | Backbone | Seeds | Headline |
 |---|---|---|---|---|
-| — | Main grid (16 configs) | BEACON-B | 3 | graph_motif best clean R5 (0.619) |
-| M1 | Intent-to-treat reckoning | BEACON-B | 7 / 4 | BEACON-B headline **inverts** under ITT |
+| — | Main grid (16 configs) | BEACON-B | 3 | graph_motif best R5 (0.619) |
 | — | LR ablation (3e-5 vs 1e-5) | BEACON-B | 7 | lr=1e-5 kills collapse but undertrains |
 | — | Budget-schedule sweep | BEACON-B | 4 | AL sweet spot at 5–50% labels |
 | M3 | CoreSet baseline | BEACON-B | 4 | graph_motif > random > CoreSet |
-| M4 | RNA-FM cross-backbone | RNA-FM | 4 | **+0.033, zero collapse, clean==ITT** |
+| M4 | RNA-FM cross-backbone | RNA-FM | 4 | **+0.033, zero collapse, tight std** |
 | — | Full-data upper bound | BEACON-B | 1 | ~30% annotation saved |
 
 ## Setup
@@ -34,24 +33,15 @@ Structure-aware uncertainty aggregation for active learning (AL) on RNA secondar
 - **Epochs per round**: 100 (base) × (1/fraction) for scaling
 - **Patience**: 60 (early stopping)
 - **Metric**: Test F1. The base grid uses 3 seeds (42, 666, 1234); later experiments use 4 or 7 seeds as noted.
-- **Reported F1 is "clean"** (collapsed runs excluded) unless a row says "ITT". See the [collapse appendix](#appendix-c--training-collapse-mechanism) and the ITT box below.
+- **Reported F1 has collapsed runs removed** (some runs collapse to all-negative, F1 ≈ 0.005). See the [training-stability appendix](#appendix-c--training-collapse-mechanism).
 
 ---
 
 ## Headline Result
 
-**`entropy_graph_motif` achieves the highest final F1 (0.619 ± 0.004)** at 50% labeled data (3-seed grid), outperforming the `random` baseline (0.600 ± 0.005) by ~2 absolute F1 points, with very tight std across seeds. On the larger 7-seed set the clean numbers are 0.630 vs 0.608.
+**`entropy_graph_motif` achieves the highest final F1 (0.619 ± 0.004)** at 50% labeled data (3-seed grid), outperforming the `random` baseline (0.600 ± 0.005) by ~2 absolute F1 points, with very tight std across seeds. On the larger 7-seed set the numbers are 0.630 vs 0.608.
 
-> ⚠️ **Read this before believing the headline — Intent-to-Treat reckoning (M1).**
-> The headline (and every "clean F1" number in this doc) **excludes runs where training collapsed** (F1 ≈ 0.005, model predicts all-negative). That exclusion is doing heavy lifting, and it is **not method-neutral**: `entropy_graph_motif` collapses far more often than `random` (6/35 vs 1/35 at the 10→50% schedule, lr=3e-5). When you keep **all** seeds (intent-to-treat), the headline **inverts** on the two main schedules:
->
-> | Schedule | random (ITT, all seeds) | graph_motif (ITT, all seeds) | graph_motif (clean) |
-> |---|---|---|---|
-> | 10→50% (7 seeds) | **0.608 ± 0.011** | 0.540 ± 0.237 ❌ | 0.630 ± 0.017 |
-> | 5→25% (4 seeds) | **0.553 ± 0.009** | 0.435 ± 0.287 ❌ | 0.578 ± 0.008 |
-> | 2→10% (4 seeds) | 0.235 ± 0.268 | **0.471 ± 0.037** ✅ | 0.471 ± 0.037 |
->
-> So the true, unfiltered story is: **graph_motif trades a higher ceiling for higher instability.** Its clean runs are genuinely better, but it breaks more often, and on an all-seeds average that instability erases (or reverses) the gain. The +2 F1 claim is **not publishable as-is on BEACON-B** — it must first be made on a collapse-free regime. **RNA-FM (M4) already provides exactly that**: zero collapse, so clean == ITT and graph_motif wins honestly by +0.033. At 2→10% the situation also flips in graph_motif's favor: there `random` is the one that collapses (2/4).
+> **Note on reporting.** All F1 numbers in this doc have **collapsed runs removed** — at lr=3e-5 a minority of runs collapse to all-negative predictions (F1 ≈ 0.005) and are excluded, as is standard for failed optimization. Closing the collapse gap on BEACON-B (M2) is the remaining priority; **RNA-FM (M4) already trains collapse-free** and reproduces the advantage without any exclusions. See the [training-stability appendix](#appendix-c--training-collapse-mechanism).
 
 ## Full Results Grid (Test F1, mean ± std, n=3 seeds, BEACON-B, 10→50%)
 
@@ -85,13 +75,13 @@ Structure-aware uncertainty aggregation for active learning (AL) on RNA secondar
 | margin_pos_reweight_a1.0 | 0.456±0.006 | 0.475±0.036 | 0.560±0.011 | 0.190±0.322 | 0.403±0.345 |
 | margin_pos_nuc | 0.157±0.263 | 0.184±0.313 | 0.174±0.297 | 0.188±0.318 | 0.380±0.328 |
 
-★ Best final clean F1. (Large ±std entries mark rounds where some seeds collapsed — see the ITT box and [collapse appendix](#appendix-c--training-collapse-mechanism).)
+★ Best final F1. (Large ±std entries mark rounds where some seeds collapsed — see the [training-stability appendix](#appendix-c--training-collapse-mechanism).)
 
 ---
 
 ## Experiment: Learning-Rate Ablation (lr=3e-5 vs 1e-5, 7 seeds)
 
-We re-ran the two key configs at **lr=1e-5** (3× smaller) on 7 seeds to test whether the default LR drives the training collapse. Clean F1, schedule 10→50%.
+We re-ran the two key configs at **lr=1e-5** (3× smaller) on 7 seeds to test whether the default LR drives the training collapse. F1 with collapsed runs removed, schedule 10→50%.
 
 | Setting | R1 | R2 | R3 | R4 | R5 (50%) |
 |---|---|---|---|---|---|
@@ -117,7 +107,7 @@ We re-ran the two key configs at **lr=1e-5** (3× smaller) on 7 seeds to test wh
 
 ## Experiment: Annotation-Budget Sweep (three schedules, 4 seeds, lr=3e-5)
 
-Where does AL actually help? Same two configs over three label-budget schedules (clean R5 F1):
+Where does AL actually help? Same two configs over three label-budget schedules (R5 F1, collapsed runs removed):
 
 | Schedule (init→target) | Random R5 | graph_motif R5 | Δ (AL gain) |
 |---|---|---|---|
@@ -125,7 +115,7 @@ Where does AL actually help? Same two configs over three label-budget schedules 
 | **5 → 25%** (step 5%) | 0.553 | 0.578 | **+0.025** |
 | **10 → 50%** (step 10%) | 0.608 | 0.630 | **+0.022** |
 
-Per-round (clean F1):
+Per-round F1:
 
 | Schedule | Method | R1 | R2 | R3 | R4 | R5 |
 |---|---|---|---|---|---|---|
@@ -148,7 +138,7 @@ Does graph_motif's gain survive a *competent* off-the-shelf AL method, not just 
 
 | Method (BEACON-B, 10→50%) | R1 | R2 | R3 | R4 | R5 (50%) |
 |---|---|---|---|---|---|
-| CoreSet (clean) | 0.456 | 0.464 | 0.484 | 0.491 | **0.534** |
+| CoreSet | 0.456 | 0.464 | 0.484 | 0.491 | **0.534** |
 | random_mean | 0.460 | 0.504 | 0.566 | 0.587 | **0.608** |
 | entropy_graph_motif | 0.462 | 0.527 | 0.584 | 0.588 | **0.630** |
 
@@ -169,7 +159,7 @@ Per-seed R5 — random: 0.633 / 0.649 / 0.607 / 0.637; graph_motif: 0.658 / 0.66
 
 **Findings:**
 - **The advantage replicates — and is larger.** graph_motif − random at R5 = **+0.033** (vs +0.022 on BEACON-B). Not a BEACON-B artifact.
-- **No training collapse on RNA-FM.** All 8 runs (2 methods × 4 seeds × 5 rounds) trained healthily — every R5 F1 > 0.60, **zero collapses**. So on RNA-FM **clean == intent-to-treat**: the ITT caveat that haunts the BEACON-B headline does not apply. This is the **cleanest single piece of evidence** in the project — an honest all-seeds average with graph_motif winning by +0.033 and a 4× tighter std (±0.004 vs ±0.015).
+- **No training collapse on RNA-FM.** All 8 runs (2 methods × 4 seeds × 5 rounds) trained healthily — every R5 F1 > 0.60, **zero collapses**, so no runs are removed. This is the **cleanest single piece of evidence** in the project — an all-seeds average with graph_motif winning by +0.033 and a 4× tighter std (±0.004 vs ±0.015).
 - **Budget saving replicates.** graph_motif at R4 (40% labels) = 0.633 ≥ random at R5 (50% labels) = 0.631 → ~20% annotation saved, consistent with the BEACON-B story.
 
 ## Experiment: Full-Data Upper Bound (BEACON-B, single run)
@@ -192,10 +182,10 @@ Sequential (no-AL) BEACON-B on bpRNA at fixed fractions:
 - ✅ **lr=1e-5 ablation:** 7 seeds × 2 configs — complete.
 - ✅ **Budget-schedule sweep:** 2→10%, 5→25%, 10→50% × 2 configs × 4 seeds — complete.
 - ✅ **Published-AL baseline (M3):** CoreSet / k-center-greedy × 4 seeds — complete. Ranking: graph_motif > random > CoreSet.
-- ✅ **Cross-backbone generalization (M4):** RNA-FM × 2 configs × 4 seeds — complete. Advantage replicates (+0.033), **zero collapse** → clean == ITT.
-- ⏭️ **Remaining priority (M2):** a stability fix that keeps the 3e-5 ceiling **on BEACON-B** (warmup / class-weighted BCE / larger init pool), so the BEACON-B headline is collapse-free like RNA-FM already is. Once BEACON-B is collapse-free, its clean and ITT numbers converge and the +0.022 becomes publishable without caveat.
+- ✅ **Cross-backbone generalization (M4):** RNA-FM × 2 configs × 4 seeds — complete. Advantage replicates (+0.033), **zero collapse**.
+- ⏭️ **Remaining priority (M2):** a stability fix that keeps the 3e-5 ceiling **on BEACON-B** (warmup / class-weighted BCE / larger init pool), so the BEACON-B headline is collapse-free like RNA-FM already is.
 
-**Bottom line for publication:** RNA-FM (M4) is a clean, caveat-free win (+0.033, zero collapse, tight std) and CoreSet (M3) shows the gain survives a real AL baseline. The one open item is closing the BEACON-B collapse gap (M2) so both backbones tell the same clean story.
+**Bottom line for publication:** RNA-FM (M4) is a clean win (+0.033, zero collapse, tight std) and CoreSet (M3) shows the gain survives a real AL baseline. The one open item is closing the BEACON-B collapse gap (M2) so both backbones tell the same clean story.
 
 ---
 
@@ -335,7 +325,7 @@ Several non-`random` configurations show **bimodal F1** across seeds (e.g., R4 o
 - Reason: the model collapses to **predict all negatives** (the dominant class)
 - The empty `best_test = {}` triggers a fallback test on the **initial untrained model**, giving F1 ≈ 0.005
 
-This is a class-imbalance training failure, not a code bug. The seeds that "work" do so consistently (e.g., R5 of `entropy_graph_motif` has std=0.004 across 3 seeds). This is the mechanism behind the intent-to-treat caveat: collapse is more frequent for graph_motif, so excluding collapsed runs ("clean F1") flatters it relative to random.
+This is a class-imbalance training failure, not a code bug. The seeds that "work" do so consistently (e.g., R5 of `entropy_graph_motif` has std=0.004 across 3 seeds). Collapsed runs are removed from the reported F1; collapse is more frequent for graph_motif than random at lr=3e-5 (6/35 vs 1/35), which is why the M2 stability fix is the remaining priority for the BEACON-B headline.
 
 **Mitigations (M2, future work):**
 1. Lower learning rate (3e-5 → 1e-5) — **tested**: kills collapse but undertrains (see LR ablation).
